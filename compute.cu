@@ -13,14 +13,13 @@ __global__ void compute_kernel(vector3 *values, double *hPos, double *hVel, doub
 
     if (i < NUMENTITIES) {
         for (int k = 0; k < 3; k++) {
-            shared_hPos[threadIdx.x * 3 + k] = hPos[threadIdx.x * 3 + k];
+            shared_hPos[i * 3 + k] = hPos[i * 3 + k];
         }
-        shared_mass[threadIdx.x] = mass[threadIdx.x];
+        shared_mass[i] = mass[i];
     }
     __syncthreads();
 
     if (i >= NUMENTITIES || j >= NUMENTITIES) {
-        __syncthreads();
 	return;
     }
     if (i == j) {
