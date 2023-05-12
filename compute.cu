@@ -8,35 +8,45 @@ __global__ void compute_kernel(vector3 *values, double *hPos, double *hVel, doub
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = blockIdx.y * blockDim.y + threadIdx.y;
 
+    __shared__ double shared_hPos[NUMENTITIES * 3];
+    __shared__ double shared_mass[NUMENTITIES];
+
+    if (threadIdx.x < NUMENTITIES) {
+        for (int k = 0; k < 3; k++) {
+            shared_hPos[threadIdx.x * 3 + k] = hPos[threadIdx.x * 3 + k];
+        }
+        shared_mass[threadIdx.x] = mass[threadIdx.x];
+    }
+    __syncthreads();
+
     if (i >= NUMENTITIES || j >= NUMENTITIES) return;
 
     if (i == j) {
         FILL_VECTOR(values[i*NUMENTITIES + j], 0, 0, 0);
     } else {
         vector3 distance;
-        for (int k = 0; k < 3; k++) distance[k] = hPos[i*3 + k] - hPos[j*3 + k];
-        double magnitude_sq = distance[0]*distance[0] + distance[1]*distance[1] + distance[2]*distance[2];
+        for (int k = 0; k < 3; k++) distance[k] = shared_hPos[i * 3 + k] - shared_hPos[j * 3 + k];
+        double magnitude_sq = distance[0] * distance[0] + distance[1] * distance[1] + distance[2] * distance[2];
         double magnitude = sqrt(magnitude_sq);
-        double accelmag = -1 * GRAV_CONSTANT * mass[j] / magnitude_sq;
-        FILL_VECTOR(values[i*NUMENTITIES + j], accelmag * distance[0] / magnitude, accelmag * distance[1] / magnitude, accelmag * distance[2] / magnitude);
+        double accelmag = -1 * GRAV_CONSTANT * shared_mass[j] / magnitude_sq;
+        FILL_VECTOR(values[i * NUMENTITIES + j], accelmag * distance[0] / magnitude, accelmag * distance[1] / magnitude, accelmag * distance[2] / magnitude);
     }
 }
 
 __global__ void update_kernel(vector3 *values, double *hPos, double *hVel, double *mass) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
+
     if (i >= NUMENTITIES) return;
 
     vector3 accel_sum = {0, 0, 0};
     for (int j = 0; j < NUMENTITIES; j++) {
         for (int k = 0; k < 3; k++)
-            accel_sum[k] += values[i*NUMENTITIES + j][k];
+            accel_sum[k] += values[i * NUMENTITIES + j][k];
     }
 
-    // Compute the new velocity based on the acceleration and time interval
-    // Compute the new position based on the velocity and time interval
     for (int k = 0; k < 3; k++) {
-        hVel[i*3 + k] += accel_sum[k] * INTERVAL;
-        hPos[i*3 + k] += hVel[i*3 + k] * INTERVAL;
+        hVel[i * 3 + k] += accel_sum[k] * INTERVAL;
+        hPos[i * 3 + k] += hVel[i * 3 + k] * INTERVAL;
     }
 }
 
