@@ -1,3 +1,7 @@
+/*
+    Robert Oratorio & Eli Brignac
+*/
+
 #include <stdlib.h>
 #include <math.h>
 #include "vector.h"
@@ -45,8 +49,6 @@ __global__ void update_kernel(vector3 *values, double *hPos, double *hVel, doubl
 //Returns: None
 //Side Effect: Modifies the hPos and hVel arrays with the new positions and accelerations after 1 INTERVAL
 extern "C" void compute() {
-    int i, j, k;
-
     // Allocate memory on the device
     vector3 *d_values;
     double *d_hPos, *d_hVel, *d_mass;
