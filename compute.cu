@@ -27,7 +27,11 @@ __global__ void compute_kernel(vector3 *values, double *hPos, double *hVel, doub
     } else {
         vector3 distance;
         for (int k = 0; k < 3; k++) distance[k] = shared_hPos[i * 3 + k] - shared_hPos[j * 3 + k];
-        double magnitude_sq = distance[0] * distance[0] + distance[1] * distance[1] + distance[2] * distance[2];
+        double magnitude_sq = 0.0;
+        for (int k = 0; k < 3; k++) {
+            double diff = distance[k];
+            magnitude_sq += diff * diff;
+        }
         double magnitude = sqrt(magnitude_sq);
         double accelmag = -1 * GRAV_CONSTANT * shared_mass[j] / magnitude_sq;
         FILL_VECTOR(values[i * NUMENTITIES + j], accelmag * distance[0] / magnitude, accelmag * distance[1] / magnitude, accelmag * distance[2] / magnitude);
