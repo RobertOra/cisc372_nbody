@@ -11,7 +11,7 @@ __global__ void compute_kernel(vector3 *values, double *hPos, double *hVel, doub
     __shared__ double shared_hPos[NUMENTITIES * 3];
     __shared__ double shared_mass[NUMENTITIES];
 
-    if (threadIdx.x < NUMENTITIES) {
+    if (i < NUMENTITIES) {
         for (int k = 0; k < 3; k++) {
             shared_hPos[threadIdx.x * 3 + k] = hPos[threadIdx.x * 3 + k];
         }
@@ -19,8 +19,10 @@ __global__ void compute_kernel(vector3 *values, double *hPos, double *hVel, doub
     }
     __syncthreads();
 
-    if (i >= NUMENTITIES || j >= NUMENTITIES) return;
-
+    if (i >= NUMENTITIES || j >= NUMENTITIES) {
+        __syncthreads();
+	return;
+    }
     if (i == j) {
         FILL_VECTOR(values[i*NUMENTITIES + j], 0, 0, 0);
     } else {
